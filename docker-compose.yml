@@ -1,0 +1,84 @@
+
+services:
+  # Redis for shared state (required for multi-instance scalability)
+  redis:
+    image: redis:7-alpine
+    container_name: docgen-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - docgen-network
+
+  # Backend server instance 1
+  backend1:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: docgen-backend-1
+    environment:
+      PORT: 3001
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3001:3001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - docgen-network
+    restart: unless-stopped
+
+  # Backend server instance 2
+  backend2:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: docgen-backend-2
+    environment:
+      PORT: 3002
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3002:3002"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - docgen-network
+    restart: unless-stopped
+
+  # Backend server instance 3
+  backend3:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: docgen-backend-3
+    environment:
+      PORT: 3003
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3003:3003"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - docgen-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  docgen-network:
+    driver: bridge
+

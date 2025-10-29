@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* Optional: default prose width override */
+.prose { max-width: 100%; }
