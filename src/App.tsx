@@ -13,8 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Loader2, FileDown, Wand2, Play, Link as LinkIcon, Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Quote, Undo2, Redo2, CheckCircle2, Clock, FileText, Sparkles, FileCheck, Download } from "lucide-react";
+import { Loader2, FileDown, Wand2, Play, Link as LinkIcon, Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Quote, Undo2, Redo2, CheckCircle2, Clock, FileText, Sparkles, FileCheck } from "lucide-react";
 import { StatusTracker, type ProcessStatus } from "@/components/StatusTracker";
+import { WorkflowPanel } from "@/components/WorkflowPanel";
 // NOTE: In some preview/CDN environments, lucide-react icons must match their exact export names.
 // The Link icon export is `Link`, not `LinkIcon`. We alias it below to avoid collision with TipTap's Link extension.
 
@@ -236,6 +237,14 @@ export default function DocComposer() {
 
   const hasSelection = !!editor?.state && editor.state.selection.from !== editor.state.selection.to;
 
+  // Handle workflow completion
+  const handleWorkflowComplete = useCallback((content: string) => {
+    if (editor) {
+      editor.commands.setContent(content);
+      toast.success("Workflow completed! Document ready.");
+    }
+  }, [editor]);
+
   return (
     <div className="app-shell app-shell-bg">
       {/* Fallback layout (works even if Tailwind is not configured). */}
@@ -275,8 +284,27 @@ export default function DocComposer() {
           padding-right: 8px;
         }
 
-        /* Right column - fills remaining space */
+        /* Right column - document + workflow split */
         .doc-right { 
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: row;
+          gap: 24px;
+          overflow: hidden;
+        }
+
+        /* Document editor panel (left half of right column) */
+        .doc-editor-panel {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        /* Workflow panel (right half of right column) */
+        .doc-workflow-panel {
           flex: 1;
           min-width: 0;
           display: flex;
@@ -316,24 +344,28 @@ export default function DocComposer() {
         /* Custom scrollbar */
         .doc-left::-webkit-scrollbar,
         .status-card::-webkit-scrollbar,
-        .editor-scrollable::-webkit-scrollbar {
+        .editor-scrollable::-webkit-scrollbar,
+        .doc-workflow-panel::-webkit-scrollbar {
           width: 6px;
         }
         .doc-left::-webkit-scrollbar-track,
         .status-card::-webkit-scrollbar-track,
-        .editor-scrollable::-webkit-scrollbar-track {
+        .editor-scrollable::-webkit-scrollbar-track,
+        .doc-workflow-panel::-webkit-scrollbar-track {
           background: #f3f4f6;
           border-radius: 10px;
         }
         .doc-left::-webkit-scrollbar-thumb,
         .status-card::-webkit-scrollbar-thumb,
-        .editor-scrollable::-webkit-scrollbar-thumb {
+        .editor-scrollable::-webkit-scrollbar-thumb,
+        .doc-workflow-panel::-webkit-scrollbar-thumb {
           background: #cbd5e1;
           border-radius: 10px;
         }
         .doc-left::-webkit-scrollbar-thumb:hover,
         .status-card::-webkit-scrollbar-thumb:hover,
-        .editor-scrollable::-webkit-scrollbar-thumb:hover {
+        .editor-scrollable::-webkit-scrollbar-thumb:hover,
+        .doc-workflow-panel::-webkit-scrollbar-thumb:hover {
           background: #94a3b8;
         }
 
@@ -520,10 +552,10 @@ export default function DocComposer() {
                 <p className="text-xs text-gray-600 mb-2">Quick templates:</p>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { icon: FileText, text: "Business Plan" },
-                    { icon: Sparkles, text: "Project Proposal" },
                     { icon: FileCheck, text: "Research Paper" },
-                    { icon: Download, text: "Meeting Minutes" }
+                     { icon: Sparkles, text: "Blog Post" },
+                    { icon: FileText, text: "Business Plan" },
+                   
                   ].map(({ icon: Icon, text }) => (
                     <button
                       key={text}
@@ -634,28 +666,36 @@ export default function DocComposer() {
           )} */}
         </div>
 
-        {/* Right column: Editor */}
+        {/* Right column: Editor + Workflow Split */}
         <div className="doc-right">
-          <Card className="rounded-2xl editor-container">
-            <CardHeader className="flex-shrink-0">
-              <CardTitle className="text-xl">Document</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-0 space-y-3">
-              <div className="flex-shrink-0">
-                <Toolbar editor={editor} />
-              </div>
-              <div className="editor-scrollable flex-1">
-                <div className="rounded-2xl border editor-frame">
-                  {/* BubbleMenu temporarily removed for CDN builds */}
-                  <EditorContent editor={editor} />
+          {/* Document Editor Panel (Left Half) */}
+          <div className="doc-editor-panel">
+            <Card className="rounded-2xl h-full flex flex-col overflow-hidden">
+              <CardHeader className="flex-shrink-0">
+                <CardTitle className="text-xl">Document</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col min-h-0 space-y-3">
+                <div className="flex-shrink-0">
+                  <Toolbar editor={editor} />
                 </div>
-              </div>
-              <div className="flex-shrink-0 flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-                <span>{editor ? editor.storage.characterCount.characters() : 0} characters</span>
-                <span>{editor ? editor.storage.characterCount.words() : 0} words</span>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="editor-scrollable flex-1">
+                  <div className="rounded-2xl border editor-frame">
+                    {/* BubbleMenu temporarily removed for CDN builds */}
+                    <EditorContent editor={editor} />
+                  </div>
+                </div>
+                <div className="flex-shrink-0 flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+                  <span>{editor ? editor.storage.characterCount.characters() : 0} characters</span>
+                  <span>{editor ? editor.storage.characterCount.words() : 0} words</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Workflow Panel (Right Half) */}
+          <div className="doc-workflow-panel">
+            <WorkflowPanel onWorkflowComplete={handleWorkflowComplete} />
+          </div>
         </div>
       </div>
     </div>
