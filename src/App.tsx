@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { toast } from "sonner";
 import { Loader2, FileDown, Wand2, Play, Link as LinkIcon, Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Quote, Undo2, Redo2, CheckCircle2, Clock, FileText, Sparkles, FileCheck } from "lucide-react";
 import { StatusTracker, type ProcessStatus } from "@/components/StatusTracker";
-import { WorkflowPanel } from "@/components/WorkflowPanel";
+import { TaskWorkflowDemo } from "@/components/workflow/TaskWorkflowDemo";
 // NOTE: In some preview/CDN environments, lucide-react icons must match their exact export names.
 // The Link icon export is `Link`, not `LinkIcon`. We alias it below to avoid collision with TipTap's Link extension.
 
@@ -107,6 +107,8 @@ export default function DocComposer() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showTaskWorkflowDemo, setShowTaskWorkflowDemo] = useState(false);
+  const [taskWorkflowDemoRun, setTaskWorkflowDemoRun] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -238,12 +240,11 @@ export default function DocComposer() {
   const hasSelection = !!editor?.state && editor.state.selection.from !== editor.state.selection.to;
 
   // Handle workflow completion
-  const handleWorkflowComplete = useCallback((content: string) => {
-    if (editor) {
-      editor.commands.setContent(content);
-      toast.success("Workflow completed! Document ready.");
-    }
-  }, [editor]);
+  const handleStartTaskWorkflowDemo = useCallback(() => {
+    setShowTaskWorkflowDemo(true);
+    setTaskWorkflowDemoRun((prev) => prev + 1);
+    toast.info("Playing task workflow demo timeline");
+  }, []);
 
   return (
     <div className="app-shell app-shell-bg">
@@ -666,7 +667,7 @@ export default function DocComposer() {
           )} */}
         </div>
 
-        {/* Right column: Editor + Workflow Split */}
+        {/* Right column: Editor + Task Workflow Demo */}
         <div className="doc-right">
           {/* Document Editor Panel (Left Half) */}
           <div className="doc-editor-panel">
@@ -692,9 +693,48 @@ export default function DocComposer() {
             </Card>
           </div>
 
-          {/* Workflow Panel (Right Half) */}
+          {/* Task Workflow Demo (Right Half) */}
           <div className="doc-workflow-panel">
-            <WorkflowPanel onWorkflowComplete={handleWorkflowComplete} />
+            <Card className="rounded-2xl mb-4">
+              <CardHeader>
+                <CardTitle className="text-lg">Task Workflow Demo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Preview the real-time task workflow monitor using sample data from the “Data centers
+                  in space” vision document run.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={handleStartTaskWorkflowDemo}
+                  >
+                    {showTaskWorkflowDemo ? "Restart Demo" : "Play Demo"}
+                  </Button>
+                  {showTaskWorkflowDemo && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl"
+                      onClick={() => setShowTaskWorkflowDemo(false)}
+                    >
+                      Hide Demo
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {showTaskWorkflowDemo ? (
+              <TaskWorkflowDemo key={taskWorkflowDemoRun} />
+            ) : (
+              <Card className="rounded-2xl h-full flex items-center justify-center text-center text-sm text-gray-500">
+                <CardContent>
+                  Click “Play Demo” to preview the task workflow monitor.
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
